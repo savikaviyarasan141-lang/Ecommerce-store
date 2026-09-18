@@ -1,43 +1,58 @@
 from dotenv import load_dotenv
 import os
 
+# Load environment variables from backend/.env
 load_dotenv()
+
 from flask import Flask, request
 from flask_cors import CORS
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+# ==========================================
+# Flask App
+# ==========================================
+
 app = Flask(__name__)
-CORS(app)
 
-# --------------------------------
+
+# ==========================================
+# CORS Configuration
+# ==========================================
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "http://localhost:5173"
+    }
+})
+
+
+# ==========================================
 # MySQL Configuration
-# --------------------------------
+# ==========================================
 
-app.config["MYSQL_HOST"] = os.getenv("localhost") 
-
-app.config["MYSQL_USER"] = os.getenv("root") 
-
-app.config["MYSQL_PASSWORD"] = os.getenv("MYSQL_PASSWORD") 
-
-app.config["MYSQL_DB"] = os.getenv("ecommerce_db")
+app.config["MYSQL_HOST"] = os.getenv("MYSQL_HOST")
+app.config["MYSQL_USER"] = os.getenv("MYSQL_USER")
+app.config["MYSQL_PASSWORD"] = os.getenv("MYSQL_PASSWORD")
+app.config["MYSQL_DB"] = os.getenv("MYSQL_DB")
 app.config["MYSQL_CURSORCLASS"] = "DictCursor"
 
 mysql = MySQL(app)
 
 
-# --------------------------------
+# ==========================================
 # Home
-# --------------------------------
+# ==========================================
 
 @app.route("/")
 def home():
     return "E-Commerce Backend is Running!"
 
 
-# --------------------------------
+# ==========================================
 # Test Database
-# --------------------------------
+# ==========================================
 
 @app.route("/api/test-db")
 def test_db():
@@ -55,9 +70,9 @@ def test_db():
     }
 
 
-# --------------------------------
+# ==========================================
 # Get Products
-# --------------------------------
+# ==========================================
 
 @app.route("/api/products", methods=["GET"])
 def get_products():
@@ -74,9 +89,9 @@ def get_products():
     }
 
 
-# --------------------------------
+# ==========================================
 # Admin - Add Product
-# --------------------------------
+# ==========================================
 
 @app.route("/api/admin/products", methods=["POST"])
 def add_product():
@@ -157,9 +172,9 @@ def add_product():
     }, 201
 
 
-# --------------------------------
+# ==========================================
 # Admin - Update Product
-# --------------------------------
+# ==========================================
 
 @app.route("/api/admin/products/<int:product_id>", methods=["PUT"])
 def update_product(product_id):
@@ -250,9 +265,9 @@ def update_product(product_id):
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # Admin - Delete Product
-# --------------------------------
+# ==========================================
 
 @app.route("/api/admin/products/<int:product_id>", methods=["DELETE"])
 def delete_product(product_id):
@@ -320,9 +335,9 @@ def delete_product(product_id):
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # User Registration
-# --------------------------------
+# ==========================================
 
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -383,9 +398,9 @@ def register():
     }, 201
 
 
-# --------------------------------
+# ==========================================
 # User Login
-# --------------------------------
+# ==========================================
 
 @app.route("/api/login", methods=["POST"])
 def login():
@@ -438,9 +453,9 @@ def login():
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # Add Product To Cart
-# --------------------------------
+# ==========================================
 
 @app.route("/api/cart", methods=["POST"])
 def add_to_cart():
@@ -551,9 +566,9 @@ def add_to_cart():
     }, 201
 
 
-# --------------------------------
+# ==========================================
 # Get Cart
-# --------------------------------
+# ==========================================
 
 @app.route("/api/cart/<int:user_id>", methods=["GET"])
 def get_cart(user_id):
@@ -588,9 +603,9 @@ def get_cart(user_id):
     }
 
 
-# --------------------------------
+# ==========================================
 # Update Cart Quantity
-# --------------------------------
+# ==========================================
 
 @app.route(
     "/api/cart/<int:user_id>/<int:product_id>",
@@ -680,9 +695,9 @@ def update_cart_quantity(user_id, product_id):
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # Remove Product From Cart
-# --------------------------------
+# ==========================================
 
 @app.route(
     "/api/cart/<int:user_id>/<int:product_id>",
@@ -719,9 +734,9 @@ def remove_from_cart(user_id, product_id):
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # Checkout
-# --------------------------------
+# ==========================================
 
 @app.route("/api/checkout", methods=["POST"])
 def checkout():
@@ -745,10 +760,7 @@ def checkout():
 
     try:
 
-        # --------------------------------
         # Get User Cart
-        # --------------------------------
-
         cursor.execute(
             """
             SELECT
@@ -775,10 +787,7 @@ def checkout():
                 "message": "Cart is empty"
             }, 400
 
-        # --------------------------------
         # Calculate Total
-        # --------------------------------
-
         total_amount = 0
 
         for item in cart_items:
@@ -796,10 +805,7 @@ def checkout():
                 item["price"] * item["quantity"]
             )
 
-        # --------------------------------
         # Create Order
-        # --------------------------------
-
         cursor.execute(
             """
             INSERT INTO orders
@@ -815,10 +821,7 @@ def checkout():
 
         order_id = cursor.lastrowid
 
-        # --------------------------------
         # Create Order Items
-        # --------------------------------
-
         for item in cart_items:
 
             cursor.execute(
@@ -848,10 +851,7 @@ def checkout():
                 )
             )
 
-        # --------------------------------
         # Clear Cart
-        # --------------------------------
-
         cursor.execute(
             """
             DELETE FROM cart
@@ -860,10 +860,7 @@ def checkout():
             (user_id,)
         )
 
-        # --------------------------------
         # Save Transaction
-        # --------------------------------
-
         mysql.connection.commit()
 
         cursor.close()
@@ -887,9 +884,9 @@ def checkout():
         }, 500
 
 
-# --------------------------------
+# ==========================================
 # Get User Orders
-# --------------------------------
+# ==========================================
 
 @app.route("/api/orders/<int:user_id>", methods=["GET"])
 def get_user_orders(user_id):
@@ -920,9 +917,9 @@ def get_user_orders(user_id):
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # Get Order Details
-# --------------------------------
+# ==========================================
 
 @app.route("/api/orders/<int:order_id>/details", methods=["GET"])
 def get_order_details(order_id):
@@ -981,9 +978,10 @@ def get_order_details(order_id):
         "items": items
     }, 200
 
-# --------------------------------
+
+# ==========================================
 # Admin - Get All Orders
-# --------------------------------
+# ==========================================
 
 @app.route("/api/admin/orders", methods=["GET"])
 def get_all_orders():
@@ -1047,9 +1045,9 @@ def get_all_orders():
     }, 200
 
 
-# --------------------------------
+# ==========================================
 # Admin - Update Order Status
-# --------------------------------
+# ==========================================
 
 @app.route(
     "/api/admin/orders/<int:order_id>",
@@ -1150,9 +1148,11 @@ def update_order_status(order_id):
         "order_id": order_id,
         "status": status
     }, 200
-# --------------------------------
+
+
+# ==========================================
 # Debug Cart
-# --------------------------------
+# ==========================================
 
 @app.route("/api/debug-cart")
 def debug_cart():
@@ -1173,9 +1173,9 @@ def debug_cart():
     }
 
 
-# --------------------------------
+# ==========================================
 # Run Application
-# --------------------------------
+# ==========================================
 
 if __name__ == "__main__":
     app.run(debug=True)
